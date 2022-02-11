@@ -1,0 +1,20 @@
+name: azure-nn
+channels:
+  - defaults
+  - pytorch
+  - conda-forge
+dependencies:
+  - pandas
+  - tqdm
+  - numpy
+  - torchvision
+  - python=3.8
+  - matplotlib
+  - pytorch
+  - scikit-image
+  - pip
+  - pip:
+    - azureml-sdk
+    - azureml-mlflow
+    - mlflow
+    
