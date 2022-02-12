@@ -1,4 +1,4 @@
-name: azure-nn
+name: robofish-azure-nn
 channels:
   - defaults
   - pytorch
