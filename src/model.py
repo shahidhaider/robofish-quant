@@ -27,11 +27,15 @@ class downsampleStage(nn.Module):
         
         self.pool = nn.MaxPool2d(2,2)
 
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.bn3 = nn.BatchNorm2d(out_channels)
+        self.elu = nn.ELU()
     def forward(self,x):
         
-        x = F.elu(self.conv1(x))
-        x = F.elu(self.conv2(x))
-        x = F.elu(self.conv3(x))
+        x = self.elu(self.bn1(self.conv1(x)))
+        x = self.elu(self.bn2(self.conv2(x)))
+        x = self.elu(self.bn3(self.conv3(x)))
         skip = x
         x = self.pool(x)
 
@@ -61,14 +65,17 @@ class upsampleStage(nn.Module):
                                 padding = 1,
                                 padding_mode='reflect')
         
-        self.upsample = nn.Upsample(scale_factor=(2,2),mode='nearest')
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.bn3 = nn.BatchNorm2d(last_channel_out)
+        self.elu = nn.ELU()
 
     def forward(self,x,skip):
         x = F.interpolate(x,scale_factor=2)
         x = torch.cat((x,skip),dim=1)
-        x = F.elu(self.conv1(x))
-        x = F.elu(self.conv2(x))
-        x = F.elu(self.conv3(x))
+        x = self.elu(self.bn1(self.conv1(x)))
+        x = self.elu(self.bn2(self.conv2(x)))
+        x = self.elu(self.bn3(self.conv3(x)))
 
         return x
 class bottleneck(nn.Module):
@@ -94,10 +101,14 @@ class bottleneck(nn.Module):
                                 padding_mode='reflect',
                                 )
 
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.bn3 = nn.BatchNorm2d(out_channels)
+        self.elu = nn.ELU()
     def forward(self,x):
-        x = F.elu(self.conv1(x))
-        x = F.elu(self.conv2(x))
-        x = F.elu(self.conv3(x))
+        x = self.elu(self.bn1(self.conv1(x)))
+        x = self.elu(self.bn2(self.conv2(x)))
+        x = self.elu(self.bn3(self.conv3(x)))
         return x
 
 class unet(nn.Module):
@@ -175,18 +186,15 @@ class anglerFISH(nn.Module):
                                                             padding=1,
                                                             padding_mode='reflect')
                                                 ))
-
-        #self.sigmoid = nn.Sigmoid()
+        # self.sigmoid = nn.Sigmoid()
     def forward(self,x647,x750):
 
         x = self.twostage(x647,x750)
-        #out_p = self.sigmoid(self.head_p(x))
-        #out_bc = self.sigmoid(self.head_bc(x))
+        # out_p = self.sigmoid(self.head_p(x))
+        # out_bc = self.sigmoid(self.head_bc(x))
 
-        out_p = (self.head_p(x))
-        out_bc =(self.head_bc(x))
-
-
+        out_p = self.head_p(x)
+        out_bc = self.head_bc(x)
         return out_p,out_bc
 
         
