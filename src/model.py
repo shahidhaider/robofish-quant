@@ -175,11 +175,17 @@ class anglerFISH(nn.Module):
                                                             padding=1,
                                                             padding_mode='reflect')
                                                 ))
+
+        #self.sigmoid = nn.Sigmoid()
     def forward(self,x647,x750):
 
         x = self.twostage(x647,x750)
-        out_p = torch.sigmoid(self.head_p(x))
-        out_bc = torch.sigmoid(self.head_bc(x))
+        #out_p = self.sigmoid(self.head_p(x))
+        #out_bc = self.sigmoid(self.head_bc(x))
+
+        out_p = (self.head_p(x))
+        out_bc =(self.head_bc(x))
+
 
         return out_p,out_bc
 

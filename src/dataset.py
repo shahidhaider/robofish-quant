@@ -91,5 +91,8 @@ class sim_ds(Dataset):
         if not (self.transforms is None):
             x647s = self.transforms(sample['x647s'])
             x750s = self.transforms(sample['x750s'])
+        else:
+            x647s = sample['x647s']
+            x750s = sample['x750s']
 
         return x647s,x750s,sample['locmat'],sample['bcmat']
