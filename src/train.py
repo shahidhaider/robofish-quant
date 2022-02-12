@@ -44,7 +44,7 @@ def barcode_loss(pred:torch.tensor,target:torch.tensor,weight=1,valid_weight=12/
 
 
 
-def train(model,dataset,train_dataloader,val_dataloader,optimizer_fn,epochs=2,print_rate=10,device='cpu',a=1,b=16):
+def train(model,dataset,train_dataloader,val_dataloader,optimizer_fn,epochs=2,print_rate=10,device='cpu',a=1,b=16,grad_clip=1e-2):
     
     if device=='gpu' and torch.cuda.is_available():
         target = torch.device('cuda')
@@ -79,7 +79,7 @@ def train(model,dataset,train_dataloader,val_dataloader,optimizer_fn,epochs=2,pr
             epoch_bc_loss+=train_bc_loss.item()
             #print(loss)
             loss.backward()
-            nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.01, norm_type=2)
+            nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip, norm_type=2)
             optimizer_fn.step()
             epoch_loss +=loss.item()
             if count % print_rate==0:
@@ -120,7 +120,7 @@ def train(model,dataset,train_dataloader,val_dataloader,optimizer_fn,epochs=2,pr
     return best_model
 
 if __name__=="__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '--data_path',
         type=str,
@@ -134,6 +134,14 @@ if __name__=="__main__":
     )
 
     parser.add_argument(
+        '--batch_size',
+        type=int,
+        default=16,
+        help='Size of batch'
+    )
+    
+
+    parser.add_argument(
         '--gpu',
         type=int,
         help='GPU: 1 for gpu, 0 for cpu',
@@ -143,9 +151,31 @@ if __name__=="__main__":
     parser.add_argument(
         '--recompile_ds',
         type=int,
-        help='Recompile Dataset: 1',
+        help='Recache the dataset. 1 to recache, 0 to use cached',
         default=0
     )
+
+    parser.add_argument(
+        '--print_rate',
+        type=int,
+        help='The rate of batch samples to print loss functions',
+        default=10
+    )
+    
+    parser.add_argument(
+        '--lr',
+        type=float,
+        help='Learning Rate',
+        default=1e-3
+    )
+
+    parser.add_argument(
+        '--grad_clip',
+        type=float,
+        help='Gradient Clip',
+        default=1e-2
+    )
+
 
 
     args = parser.parse_args()
@@ -162,7 +192,7 @@ if __name__=="__main__":
 
     device = (args.gpu==1)*'gpu' + (args.gpu==0)*'cpu'
     print(device)
-    optimizer_fn = optim.AdamW(model.parameters(), lr=1e-3)
+    optimizer_fn = optim.AdamW(model.parameters(), lr=args.lr)
 
     transforms = transforms.Compose([
      transforms.Normalize((0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5),(0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3)),
@@ -172,7 +202,7 @@ if __name__=="__main__":
     # test_ds = sim_ds(root_data_dir = args.data_path,ds_type='test',ntiles=50,transforms=transforms)
     val_ds = sim_ds(root_data_dir = args.data_path,ds_type='val',ntiles=50,transforms=transforms,recompile=(args.recompile_ds==1))
 
-    train_dl = DataLoader(train_ds,batch_size=16,shuffle=True)
+    train_dl = DataLoader(train_ds,batch_size=args.batch_size,shuffle=True)
     # test_dl = DataLoader(test_ds,batch_size=1,shuffle=True)
     val_dl = DataLoader(val_ds,batch_size=1,shuffle=True)
 
@@ -180,11 +210,27 @@ if __name__=="__main__":
     local=False
     
     if local:
-        bm = train(epochs=args.epochs,model=model,dataset=train_ds,train_dataloader=train_dl,val_dataloader = val_dl,optimizer_fn=optimizer_fn,device=device)
+        bm = train(model=model,
+                    dataset=train_ds,
+                    train_dataloader=train_dl,
+                    val_dataloader = val_dl,
+                    optimizer_fn=optimizer_fn,
+                    device=device,
+                    print_rate=args.print_rate,
+                    epochs=args.epochs,
+                    grad_clip=args.grad_clip)
     else:
         with mlflow.start_run():
             
-            bm = train(epochs=args.epochs,model=model,dataset=train_ds,train_dataloader=train_dl,val_dataloader = val_dl,optimizer_fn=optimizer_fn,device=device)
+            bm = train(model=model,
+                    dataset=train_ds,
+                    train_dataloader=train_dl,
+                    val_dataloader = val_dl,
+                    optimizer_fn=optimizer_fn,
+                    device=device,
+                    print_rate=args.print_rate,
+                    epochs=args.epochs,
+                    grad_clip=args.grad_clip)
             mlflow.pytorch.log_model(bm,"model")
 
     
