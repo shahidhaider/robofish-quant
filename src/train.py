@@ -8,11 +8,9 @@ import torch.optim as optim
 import argparse
 import torchvision.transforms as transforms
 from tqdm import tqdm
-# from azureml.core import Run
 import os
 import mlflow
-# ADDITIONAL CODE: get run from the current context
-# run = Run.get_context()
+
 
            
 def prob_loss(pred,target):
