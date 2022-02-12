@@ -1,9 +1,6 @@
 
 import numpy as np
 
-
-
-
 def jaccard_index(pred,truth, threshold):
     threshed_pred = np.where(pred>threshold,1,0)
     intersection = np.multiply(threshed_pred,truth)

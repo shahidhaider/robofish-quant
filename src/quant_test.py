@@ -117,13 +117,14 @@ def print_size_of_model(model, label=""):
     os.remove('temp.p')
     return size
 
-def time_model(model,test_dl,label=''):
+def time_model(model,test_dl,time_iter,label=''):
     x647s,x750s,loc_mat,bc_mat = next(iter(test_dl))
-
-    start = time.time()
-    model(x647s.float(),x750s.float())
-    duration = time.time()-start
-    print(f'{label}: \t {duration}s')
+    duration=0
+    for _ in range(time_iter):
+        start = time.time()
+        model(x647s.float(),x750s.float())
+        duration += time.time()-start
+    print(f'{label}: \t {duration/time_iter}s')
 
 if __name__=="__main__":
 
@@ -150,6 +151,21 @@ if __name__=="__main__":
         default='./best_state_dicts/feb_11/state_dict.pth'
 
     )
+
+    parser.add_argument(
+        '--just_time',
+        type=int,
+        help="1:Avoid the test loop, 0: Perform test loop",
+        default=1
+    )
+
+    parser.add_argument(
+        '--time_iter',
+        type=int,
+        help="Number of times to time inference",
+        default=5
+    )
+
 
     args = parser.parse_args()
     statedict = args.state_dict
@@ -188,11 +204,11 @@ if __name__=="__main__":
 
    
 
-    time_model(model,test_dl,"Floating Point Model")
-    time_model(model,test_dl,"Dynamic Quant Model")
+    time_model(model,test_dl,args.time_iter,"Floating Point Model")
+    time_model(model,test_dl,args.time_iter,"Dynamic Quant Model")
     img_out_dir = path.join(path.dirname(statedict),'dynamic_quant_test_images')
-
-    test_run(model=dyquant_robofish,test_dl=test_dl,img_out_dir=img_out_dir)
+    if args.just_time==0:
+        test_run(model=dyquant_robofish,test_dl=test_dl,img_out_dir=img_out_dir)
 
 
     ## Static Quantization
@@ -216,9 +232,10 @@ if __name__=="__main__":
     # print('and now the quantized version:')
     # print(model_int8)
 
-    time_model(model_int8,test_dl,label="Static Quant Model")
+    time_model(model_int8,test_dl,args.time_iter,label="Static Quant Model")
     img_out_dir = path.join(path.dirname(statedict),'static_quant_test_images')
-    test_run(model=model_int8,test_dl=test_dl,img_out_dir=img_out_dir)
+    if args.just_time==0:
+        test_run(model=model_int8,test_dl=test_dl,img_out_dir=img_out_dir)
 
 
     # compare the sizes

@@ -3,8 +3,7 @@ from dataset import sim_ds
 import torchvision.transforms as transforms
 from tqdm import tqdm
 import torch
-import torch.nn.functional as F
-import torch.nn as nn
+
 from torch.utils.data import DataLoader
 import os.path as path
 import numpy as np
