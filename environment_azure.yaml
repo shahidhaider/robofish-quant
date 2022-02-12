@@ -12,5 +12,9 @@ dependencies:
   - matplotlib
   - pytorch
   - scikit-image
-  - mlflow
+  - pip
+  - pip:
+    - azureml-sdk
+    - azureml-mlflow
+    - mlflow
     
