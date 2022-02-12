@@ -14,7 +14,7 @@ import argparse
 import os
 import time
 import warnings
-
+import statistics
 warnings.simplefilter('ignore')
 class robofish_quant(nn.Module):
         def __init__(self):
@@ -38,6 +38,8 @@ def test_run(model,test_dl,img_out_dir):
     os.makedirs(img_out_dir, mode=511, exist_ok=True)
     model.eval()
     count = 0
+    accuracy_list = list()
+    jac_list = list()
     for x647s,x750s,loc_mat,bc_mat in tqdm(test_dl):
 
         f,ax = plt.subplots(1,1,figsize=(20,20))
@@ -55,6 +57,9 @@ def test_run(model,test_dl,img_out_dir):
 
         jac_50 = m.jaccard_index(p_res,loc_mat.squeeze().detach().numpy(),0.5)
         acc_50 = m.accuracy(p_res,loc_mat.squeeze().detach().numpy(),0.5)
+
+        accuracy_list.append(acc_50)
+        jac_list.append(jac_50)
 
         p_gt_locs = np.nonzero(loc_mat.squeeze().detach().numpy())
         marker_size = 25
@@ -100,7 +105,9 @@ def test_run(model,test_dl,img_out_dir):
 
         plt.savefig(path.join(img_out_dir,f'bc_map{count}.png'))
         count+=1
-        break
+        
+    print(f'Jaccard Avg: {statistics.fmean(jac_list)}')
+    print(f'Accuracy Avg: {statistics.fmean(accuracy_list)}')
 
 
 def print_size_of_model(model, label=""):

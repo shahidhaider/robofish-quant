@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import metrics as m
-
+import statistics
 if __name__=="__main__":
     model = anglerFISH()
 
@@ -49,6 +49,9 @@ if __name__=="__main__":
 
     model.load_state_dict(torch.load(statedict))
 
+    accuracy_list = list()
+    jac_list = list()
+
     model.eval()
     count = 0
     for x647s,x750s,loc_mat,bc_mat in tqdm(test_dl):
@@ -62,6 +65,9 @@ if __name__=="__main__":
 
         jac_50 = m.jaccard_index(p_res,loc_mat.squeeze().detach().numpy(),0.5)
         acc_50 = m.accuracy(p_res,loc_mat.squeeze().detach().numpy(),0.5)
+
+        accuracy_list.append(acc_50)
+        jac_list.append(jac_50)
 
         p_res_high = np.where(p_res>=0.9,1,0)
         p_res_mid = np.where(p_res<0.9,p_res,0)
@@ -114,5 +120,7 @@ if __name__=="__main__":
 
         plt.savefig(path.join(img_out_dir,f'bc_map{count}.png'))
         count+=1
-        break
+        
 
+    print(f'Jaccard Avg: {statistics.fmean(jac_list)}')
+    print(f'Accuracy Avg: {statistics.fmean(accuracy_list)}')
