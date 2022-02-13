@@ -15,9 +15,10 @@ import os
 import time
 import warnings
 import statistics
+import copy
 warnings.simplefilter('ignore')
 class robofish_quant(nn.Module):
-        def __init__(self):
+        def __init__(self,model):
             super(robofish_quant,self).__init__()
             self.quant647 = quant.QuantStub()
             self.quant750 = quant.QuantStub()
@@ -195,14 +196,6 @@ if __name__=="__main__":
     )
 
 
-    # print('Here is the floating point version of this module:')
-    # print(model)
-    # print('')
-    # print('and now the quantized version:')
-    # print(quant_robofish)
-
-
-   
 
     time_model(model,test_dl,args.time_iter,"Floating Point Model")
     time_model(model,test_dl,args.time_iter,"Dynamic Quant Model")
@@ -212,25 +205,27 @@ if __name__=="__main__":
 
 
     ## Static Quantization
-    model_quant_ready = robofish_quant()
+    model_quant_ready = robofish_quant(model=model)
     # set the qconfig for PTQ
     model_quant_ready.qconfig = quant.get_default_qconfig(args.qbackend)
     # set the qengine to control weight packing
     torch.backends.quantized.engine = args.qbackend
 
-    model_fused = model_quant_ready # Would fuse, but difficult with multiple submodules
+
+
+    model_fused = copy.deepcopy(model_quant_ready)
+
+
+    for module_name, module in model_fused.main.twostage.named_children():
+        for stage_name, stage_module in module.named_children():
+            torch.quantization.fuse_modules(stage_module,[['conv1', 'bn1'],['conv2', 'bn2'],['conv3', 'bn3']],inplace=True)
+            
 
     model_prepared = torch.quantization.prepare(model_quant_ready)
 
     x647s,x750s,loc_mat,bc_mat = next(iter(test_dl))
     model_prepared(x647s.float(),x750s.float())
     model_int8 = torch.quantization.convert(model_prepared)
-
-    # print('Here is the floating point version of this module:')
-    # print(model)
-    # print('')
-    # print('and now the quantized version:')
-    # print(model_int8)
 
     time_model(model_int8,test_dl,args.time_iter,label="Static Quant Model")
     img_out_dir = path.join(path.dirname(statedict),'static_quant_test_images')
