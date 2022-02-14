@@ -35,8 +35,8 @@ The network can be trained using the `train.py` file.
 
 ```
 python src/train.py --help
-usage: train.py [-h] [--data_path DATA_PATH] [--epochs EPOCHS] [--batch_size BATCH_SIZE] [--gpu GPU] [--recompile_ds RECOMPILE_DS]
-                [--print_rate PRINT_RATE] [--lr LR] [--grad_clip GRAD_CLIP]
+usage: train.py [-h] [--data_path DATA_PATH] [--epochs EPOCHS] [--batch_size BATCH_SIZE] [--gpu GPU]
+                [--recompile_ds RECOMPILE_DS] [--print_rate PRINT_RATE] [--lr LR] [--grad_clip GRAD_CLIP]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -56,8 +56,36 @@ optional arguments:
 ``` 
 Example data for training is stored in `Data\50.tgz`. Unzip this and point to the directory in the `--data_path` argument in `train.py` 
 
-State dictionaries are saved at the end of each epoch when there is a decrease in the best validation loss in the `mlflow` run.
+Models and state dictionaries are saved at the end of each epoch when there is a decrease in the best validation loss in the `mlflow` run.
+### Quantization Aware Training
+Quantization Aware Training can be done here as well by running the `quant_train.py` file. 
 
+```
+python src/quant_train.py --help
+usage: quant_train.py [-h] [--data_path DATA_PATH] [--epochs EPOCHS]
+                      [--batch_size BATCH_SIZE] [--gpu GPU]
+                      [--recompile_ds RECOMPILE_DS] [--print_rate PRINT_RATE]
+                      [--lr LR] [--grad_clip GRAD_CLIP] [--qbackend QBACKEND]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --data_path DATA_PATH
+                        Path to the training data (default: None)
+  --epochs EPOCHS       Number of Epochs to train (default: None)
+  --batch_size BATCH_SIZE
+                        Size of batch (default: 16)
+  --gpu GPU             GPU: 1 for gpu, 0 for cpu (default: 0)
+  --recompile_ds RECOMPILE_DS
+                        Recache the dataset. 1 to recache, 0 to use cached
+                        (default: 0)
+  --print_rate PRINT_RATE
+                        The rate of batch samples to print loss functions
+                        (default: 10)
+  --lr LR               Learning Rate (default: 0.001)
+  --grad_clip GRAD_CLIP
+                        Gradient Clip (default: 0.01)
+  --qbackend QBACKEND   Quant Backend (default: qnnpack)
+  ```
 ### Testing
 ---
 
