@@ -25,14 +25,13 @@ class robofish_quant(nn.Module):
             self.main = model
             self.dequant_p = quant.DeQuantStub()
             self.dequant_bc = quant.DeQuantStub()
-            self.sigmoid = nn.Sigmoid()
+
         def forward(self,x647,x750):
             q647 = self.quant647(x647)
             q750 = self.quant750(x750)
             out_p,out_bc = self.main(q647,q750)
             out_p,out_bc= self.dequant_p(out_p),self.dequant_bc(out_bc)
-            out_p = self.sigmoid(out_p)
-            out_bc = self.sigmoid(out_bc)
+
             return out_p,out_bc
 
 def test_run(model,test_dl,img_out_dir):
@@ -47,7 +46,7 @@ def test_run(model,test_dl,img_out_dir):
         
         out_p,out_bc = model(x647s.float(),x750s.float())
 
-        p_res = out_p.squeeze().detach().numpy()
+        p_res = torch.sigmoid(out_p.squeeze().detach()).numpy()
 
         p_res_high = np.where(p_res>=0.9,1,0)
         p_res_mid = np.where(p_res<0.9,p_res,0)
@@ -77,7 +76,7 @@ def test_run(model,test_dl,img_out_dir):
         plt.savefig(path.join(img_out_dir,f'prob_map{count}.png'))
 
 
-        bc_res = out_bc.squeeze().detach().numpy()
+        bc_res = torch.sigmoid(out_bc.squeeze().detach()).numpy()
         bc_gt = bc_mat.squeeze().detach().numpy()
         f,ax = plt.subplots(2,int(np.ceil(bc_res.shape[0]/2)),figsize=(50,20))
 
@@ -221,7 +220,7 @@ if __name__=="__main__":
             torch.quantization.fuse_modules(stage_module,[['conv1', 'bn1'],['conv2', 'bn2'],['conv3', 'bn3']],inplace=True)
             
 
-    model_prepared = torch.quantization.prepare(model_quant_ready)
+    model_prepared = torch.quantization.prepare(model_fused)
 
     x647s,x750s,loc_mat,bc_mat = next(iter(test_dl))
     model_prepared(x647s.float(),x750s.float())
