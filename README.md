@@ -27,6 +27,7 @@ NOTE: To run this on azure and track with mlflow
  conda env create -f environment_azure.yaml
  conda activate robofish-azure-nn `
 ```
+While you the necessary files are here for you to remotely train on azure, you will be missing the credentials to do so with the defauly parameters. Replace the `config.json` and the computer target in the `run-train.py` files to get your run to work on AzureML.
 
 ### Training
 ----
@@ -104,7 +105,7 @@ NOTE: The `qnnbackend` is utilised for mobile (typically ARM) backends. This is 
 |----|----|----|----|----|----|
 |Floating Point|0.925|0.879|0.0996s|19744.379||
 |Dynamic Quant|0.925|0.879|0.0741s|19744.379| 1.00x|
-|Static Quant|0.927|0.857|0.060s|5118.575|3.86x|
+|Static Quant|0.927|0.857|0.060s|4977.777|3.97x|
 
 <!-- 
 |Model Type| Accuracy | Jaccard Index | Average Inference Time (5 runs) | Size (KB)| Size Reduction|

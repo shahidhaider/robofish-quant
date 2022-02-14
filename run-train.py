@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     experiment = Experiment(workspace=ws, name='robofish-ml')
     config = ScriptRunConfig(source_directory='./src',
-                             script='train.py',
+                             script='quant_train.py',
                              compute_target='shaider1',
                              arguments=[
                             '--data_path', dataset.as_named_input('input').as_mount(),
