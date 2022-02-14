@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/shahidhaider/Code/robofish-quant/mlruns/0/9231fa4bc4394c5782c9262b6f6f4660/artifacts
+end_time: 1644824379525
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+name: ''
+run_id: 9231fa4bc4394c5782c9262b6f6f4660
+run_uuid: 9231fa4bc4394c5782c9262b6f6f4660
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1644791653642
+status: 3
+tags: []
+user_id: shahidhaider

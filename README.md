@@ -7,7 +7,7 @@ In addition, it demonstrates the impact of quantisation methods available throug
 
 1. Dynamic
 1. Static
-1. Quantisation Aware Training (TBD)
+1. Quantisation Aware Training
 
 NOTE: All the instructions and environment here to run this network locally on an M1 CPU computer. 
 
@@ -27,14 +27,14 @@ NOTE: To run this on azure and track with mlflow
  conda env create -f environment_azure.yaml
  conda activate robofish-azure-nn `
 ```
-While you the necessary files are here for you to remotely train on azure, you will be missing the credentials to do so with the defauly parameters. Replace the `config.json` and the computer target in the `run-train.py` files to get your run to work on AzureML.
+While you the necessary files are here for you to remotely train on azure, you will be missing the credentials to do so with the defauly parameters. Replace the `config.json` and the computer target in the `run-train.py` files to get your run to work on AzureML. The `upload_data.py` requires similar precaution.
 
 ### Training
 ----
 The network can be trained using the `train.py` file. 
 
 ```
-python src/test.py --help
+python src/train.py --help
 usage: train.py [-h] [--data_path DATA_PATH] [--epochs EPOCHS] [--batch_size BATCH_SIZE] [--gpu GPU] [--recompile_ds RECOMPILE_DS]
                 [--print_rate PRINT_RATE] [--lr LR] [--grad_clip GRAD_CLIP]
 
@@ -65,14 +65,13 @@ To test the network, `src/test.py` can be run to produce images demonstrating th
 
 ```
 python src/test.py
-usage: test.py [-h] [--data_path DATA_PATH] [--state_dict STATE_DICT]
+usage: test.py [-h] [--data_path DATA_PATH]
 
 optional arguments:
   -h, --help            show this help message and exit
   --data_path DATA_PATH
                         Path to the training data (default: ./Data/50/)
-  --state_dict STATE_DICT
-                        Path to the training data (default: ./best_state_dicts/feb_11/state_dict.pth)
+ 
 ```
 
 
@@ -83,16 +82,14 @@ To test the performance of Quantised models versus the floating point alternativ
 
 ```
 python src/quant_test.py
-usage: quant_test.py [-h] [--qbackend QBACKEND] [--data_path DATA_PATH] [--state_dict STATE_DICT]
+usage: quant_test.py [-h] [--qbackend QBACKEND] [--data_path DATA_PATH] 
 
 optional arguments:
   -h, --help            show this help message and exit
   --qbackend QBACKEND   Quantisation Backend (default: qnnpack)
   --data_path DATA_PATH
                         Path to the training data (default: ./Data/50/)
-  --state_dict STATE_DICT
-                        Path to the training data (default: ./best_state_dicts/feb_11/state_dict.pth)
-
+ 
 ```
 
 NOTE: The `qnnbackend` is utilised for mobile (typically ARM) backends. This is what is needed for working on M1 processors. For x86 processors with AVX2 support or higher, pass `fbgemm` into `--qbackend` backend.
@@ -100,13 +97,16 @@ NOTE: The `qnnbackend` is utilised for mobile (typically ARM) backends. This is 
 ## Results
 ----
 
+The robofish model was trained over 30 epochs with the same learning rate, gradient clipping, and optimizer in both the floating point and a quantization aware form. A manual seed was set to ensure similar random weight and bias initialisation in the model. 
 
 |Model Type| Accuracy | Jaccard Index | Average Inference Time (5 runs) | Size (KB)| Size Reduction|
 |----|----|----|----|----|----|
-|Floating Point|0.925|0.879|0.0996s|19744.379||
-|Dynamic Quant|0.925|0.879|0.0741s|19744.379| 1.00x|
-|Static Quant|0.927|0.857|0.060s|4977.777|3.97x|
+|Floating Point|0.923|0.898|0.0996s|19744.379||
+|Dynamic Quant|0.923|0.898|0.0741s|19744.379| 1.00x|
+|Static Quant|0.914|0.890|0.060s|4977.777|3.97x|
+|QAT| 0.924|0.901|0.060s|4977.777|3.97x|
 
+Interestingly enough, the QAT version performs better across both metrics...
 <!-- 
 |Model Type| Accuracy | Jaccard Index | Average Inference Time (5 runs) | Size (KB)| Size Reduction|
 |----|----|----|----|----|----|

@@ -262,7 +262,7 @@ if __name__=="__main__":
                     print_rate=args.print_rate,
                     epochs=args.epochs,
                     grad_clip=args.grad_clip)
-            torch.quantization.convert(bm, inplace=True)
+            bm = torch.quantization.convert(bm)
 
             mlflow.pytorch.log_model(bm,"model")
 

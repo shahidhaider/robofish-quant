@@ -1,6 +1,5 @@
 Data/
-mlruns/
 *.png
 .DS_Store
-
 *.pyc
+*.pth

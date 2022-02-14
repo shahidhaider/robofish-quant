@@ -16,6 +16,9 @@ import time
 import warnings
 import statistics
 import copy
+
+import mlflow
+
 warnings.simplefilter('ignore')
 class robofish_quant(nn.Module):
         def __init__(self,model):
@@ -118,13 +121,14 @@ def print_size_of_model(model, label=""):
     return size
 
 def time_model(model,test_dl,time_iter,label=''):
-    x647s,x750s,loc_mat,bc_mat = next(iter(test_dl))
-    duration=0
-    for _ in range(time_iter):
-        start = time.time()
-        model(x647s.float(),x750s.float())
-        duration += time.time()-start
-    print(f'{label}: \t {duration/time_iter}s')
+    with torch.no_grad():
+        x647s,x750s,loc_mat,bc_mat = next(iter(test_dl))
+        duration=0
+        for _ in range(time_iter):
+            start = time.time()
+            model(x647s,x750s)
+            duration += time.time()-start
+        print(f'{label}: \t {duration/time_iter}s')
 
 if __name__=="__main__":
 
@@ -145,14 +149,6 @@ if __name__=="__main__":
     )
 
     parser.add_argument(
-        '--state_dict',
-        type=str,
-        help='Path to the training data',
-        default='./best_state_dicts/feb_11/state_dict.pth'
-
-    )
-
-    parser.add_argument(
         '--just_time',
         type=int,
         help="1:Avoid the test loop, 0: Perform test loop",
@@ -167,15 +163,18 @@ if __name__=="__main__":
     )
 
 
+
     args = parser.parse_args()
-    statedict = args.state_dict
-    
     datapath = args.data_path
 
     torch.backends.quantized.engine = args.qbackend
 
-    model = anglerFISH()
 
+    qat_run = 'runs:/9231fa4bc4394c5782c9262b6f6f4660/model'
+    qat_model = mlflow.pytorch.load_model(qat_run)
+
+    float_run = 'runs:/2d8885b16e084c8b83049bff0081512a/model'
+    float_model = mlflow.pytorch.load_model(float_run)
 
     tf = transforms.Compose([
         transforms.Normalize((0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5),(0.3,0.3,0.3,0.3,0.3,0.3,0.3,0.3)),
@@ -185,30 +184,28 @@ if __name__=="__main__":
 
     test_dl = DataLoader(test_ds,batch_size=1,shuffle=False)
 
-    model.load_state_dict(torch.load(statedict))
-
-    model.eval()
+    float_model.eval()
 
     # Dyanmic Quant
     dyquant_robofish = torch.quantization.quantize_dynamic(
-        model, {nn.Conv2d}, dtype=torch.qint8
+        float_model, {nn.Conv2d}, dtype=torch.qint8
     )
 
 
 
-    time_model(model,test_dl,args.time_iter,"Floating Point Model")
-    time_model(model,test_dl,args.time_iter,"Dynamic Quant Model")
-    img_out_dir = path.join(path.dirname(statedict),'dynamic_quant_test_images')
+    time_model(float_model,test_dl,args.time_iter,"Floating Point Model")
+    time_model(dyquant_robofish,test_dl,args.time_iter,"Dynamic Quant Model")
+    img_out_dir = './dynamic_quant_test_images'
     if args.just_time==0:
         test_run(model=dyquant_robofish,test_dl=test_dl,img_out_dir=img_out_dir)
 
 
     ## Static Quantization
-    model_quant_ready = robofish_quant(model=model)
+    model_quant_ready = robofish_quant(model=float_model)
     # set the qconfig for PTQ
     model_quant_ready.qconfig = quant.get_default_qconfig(args.qbackend)
     # set the qengine to control weight packing
-    torch.backends.quantized.engine = args.qbackend
+    # torch.backends.quantized.engine = args.qbackend
 
 
 
@@ -227,14 +224,25 @@ if __name__=="__main__":
     model_int8 = torch.quantization.convert(model_prepared)
 
     time_model(model_int8,test_dl,args.time_iter,label="Static Quant Model")
-    img_out_dir = path.join(path.dirname(statedict),'static_quant_test_images')
+    img_out_dir = path.join('./static_quant_test_images')
     if args.just_time==0:
         test_run(model=model_int8,test_dl=test_dl,img_out_dir=img_out_dir)
 
 
+    #######QAT
+    qat_model=torch.quantization.convert(qat_model) #Turns out the inplace quantization conversion doesnt work
+    qat_model.eval()
+    
+    time_model(qat_model,test_dl,args.time_iter,label="QAT Model")
+    img_out_dir = path.join('./QAT_test_images')
+    if args.just_time==0:
+        test_run(model=qat_model,test_dl=test_dl,img_out_dir=img_out_dir)
+
     # compare the sizes
-    f=print_size_of_model(model,"Floating")
+    f=print_size_of_model(float_model,"Floating")
     dq=print_size_of_model(dyquant_robofish,"Dynamic Quant")
     print("{0:.2f} times smaller".format(f/dq))
     sq=print_size_of_model(model_int8,"Static Quant")
     print("{0:.2f} times smaller".format(f/sq))
+    qat=print_size_of_model(qat_model,"QAT Quant")
+    print("{0:.2f} times smaller".format(f/qat))

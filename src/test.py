@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import argparse
 import metrics as m
 import statistics
+import mlflow
 if __name__=="__main__":
     model = anglerFISH()
 
@@ -23,19 +24,11 @@ if __name__=="__main__":
         default = './Data/50/'
     )
 
-    parser.add_argument(
-        '--state_dict',
-        type=str,
-        help='Path to the training data',
-        default='./best_state_dicts/feb_11/state_dict.pth'
-
-    )
 
 
 
     args = parser.parse_args()
-    statedict = args.state_dict
-    img_out_dir = path.join(path.dirname(statedict),'test_images')
+    img_out_dir = './test_images'
     datapath = args.data_path
 
     tf = transforms.Compose([
@@ -46,7 +39,8 @@ if __name__=="__main__":
 
     test_dl = DataLoader(test_ds,batch_size=1,shuffle=False)
 
-    model.load_state_dict(torch.load(statedict))
+    float_run = 'runs:/2d8885b16e084c8b83049bff0081512a/model'
+    model = mlflow.pytorch.load_model(float_run)
 
     accuracy_list = list()
     jac_list = list()
