@@ -121,6 +121,7 @@ def train(model,dataset,train_dataloader,val_dataloader,optimizer_fn,epochs=2,pr
     return best_model
 
 if __name__=="__main__":
+    torch.manual_seed(0)
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         '--data_path',
