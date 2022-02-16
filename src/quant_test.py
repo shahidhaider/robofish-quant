@@ -18,6 +18,12 @@ import statistics
 import copy
 
 import mlflow
+from sklearn.metrics import roc_curve
+from sklearn.metrics import RocCurveDisplay
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import PrecisionRecallDisplay
+
+
 
 warnings.simplefilter('ignore')
 class robofish_quant(nn.Module):
@@ -102,16 +108,49 @@ def test_run(model,test_dl,img_out_dir):
             ax.plot(bc_res_high_locs[1],bc_res_high_locs[0],'g*',markersize=marker_size,label='High')
             ax.plot(bc_res_mid_locs[1],bc_res_mid_locs[0],'y*',markersize=marker_size,label='Mid')
 
+        bc_accuracy_list = list()
+        bc_jac_list = list()
+
+        jac_90 = m.jaccard_index(bc_res,bc_gt,0.9)
+        acc_90 = m.accuracy(bc_res,bc_gt,0.9)
+        bc_accuracy_list.append(acc_90)
+        bc_jac_list.append(jac_90)
         plt.legend()
 
         plt.tight_layout()
 
         plt.savefig(path.join(img_out_dir,f'bc_map{count}.png'))
+
+
+        fpr, tpr, _ = roc_curve(bc_gt.ravel(), bc_res.ravel())
+        roc_display = RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
+        plt.savefig(path.join(img_out_dir,f'bc_roc_{count}.png'))
+
+        fpr, tpr, _ = roc_curve(loc_mat.squeeze().detach().numpy().ravel(), p_res.ravel())
+        roc_display= RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
+        plt.savefig(path.join(img_out_dir,f'pos_roc_{count}.png'))
+
+
+        prec, recall, _ = precision_recall_curve(bc_gt.ravel(), bc_res.ravel())
+        pr_display = PrecisionRecallDisplay(precision=prec, recall=recall).plot()
+        plt.savefig(path.join(img_out_dir,f'bc_pr_{count}.png'))
+
+        prec, recall, _ = precision_recall_curve(loc_mat.squeeze().detach().numpy().ravel(), p_res.ravel())
+        pr_display= PrecisionRecallDisplay(precision=prec, recall=recall).plot()
+        plt.savefig(path.join(img_out_dir,f'pos_pr_{count}.png'))
+
         count+=1
         
-    print(f'Jaccard Avg: {statistics.fmean(jac_list)}')
-    print(f'Accuracy Avg: {statistics.fmean(accuracy_list)}')
+    print(f'Position Jaccard Avg: {statistics.fmean(jac_list)}')
+    print(f'Position Accuracy Avg: {statistics.fmean(accuracy_list)}')
 
+    print(f'Barcode Jaccard Avg: {statistics.fmean(bc_jac_list)}')
+    print(f'Barcode Accuracy Avg: {statistics.fmean(bc_accuracy_list)}')
+
+
+
+
+    
 
 def print_size_of_model(model, label=""):
     torch.save(model.state_dict(), "temp.p")

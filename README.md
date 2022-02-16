@@ -127,14 +127,21 @@ NOTE: The `qnnbackend` is utilised for mobile (typically ARM) backends. This is 
 
 The robofish model was trained over 30 epochs with the same learning rate, gradient clipping, and optimizer in both the floating point and a quantization aware form. A manual seed was set to ensure similar random weight and bias initialisation in the model. 
 
-|Model Type| Accuracy | Jaccard Index | Average Inference Time (5 runs) | Size (KB)| Size Reduction|
-|----|----|----|----|----|----|
-|Floating Point|0.923|0.898|0.0996s|19744.379||
-|Dynamic Quant|0.923|0.898|0.0741s|19744.379| 1.00x|
-|Static Quant|0.914|0.890|0.060s|4977.777|3.97x|
-|QAT| 0.924|0.901|0.060s|4977.777|3.97x|
 
-Interestingly enough, the QAT version performs better across both metrics...
+|Model Type| Average Inference Time (5 runs) | Size (KB)| Size Reduction|
+|----|----|----|----|----|----|
+|Floating Point|0.0996s|19744.379||
+|Dynamic Quant|00.0741s|19744.379| 1.00x|
+|Static Quant|0.060s|4977.777|3.97x|
+|QAT|0.060s|4977.777|3.97x|
+
+|Model Type| Pos Accuracy (>0.5) | Pos Jaccard Index (>0.5) | Barcode Accuracy>0.9 |  Barcode Jaccard Index (>0.9)|
+|----|----|----|----|----| ----|
+|Floating Point|0.923|0.898| 0.877 | 0.731|
+|Dynamic Quant|0.923|0.898| 0.877 | 0.731|
+|Static Quant|0.914|0.890|0.847|0.683|
+|QAT| 0.924|0.901|0.809|0.668|
+
 <!-- 
 |Model Type| Accuracy | Jaccard Index | Average Inference Time (5 runs) | Size (KB)| Size Reduction|
 |----|----|----|----|----|----|
